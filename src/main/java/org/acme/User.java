@@ -13,5 +13,4 @@ public class User {
     private double betAmount = 50;
     private double creditAmount;
 
-
 }

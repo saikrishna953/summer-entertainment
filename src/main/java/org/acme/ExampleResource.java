@@ -1,7 +1,9 @@
 package org.acme;
 
+import org.acme.Sheets.SheetOperations;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -13,8 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
@@ -24,18 +25,20 @@ import java.util.stream.Stream;
 public class ExampleResource {
 
 
-    public static final String matchString = "***Match -";
-    public static final String matchWinnerString = "***Match Winner -";
-    public static final String participantString = "***Today %s Choice -";
-    public static final String noMatchString = "***No Match Day";
-    public static Map<String, User> participants = new HashMap<>();
+    public static final String matchString = "***Match %s -";
+    public static final String matchWinnerString = "***Match %s Winner -";
+    public static final String participantString = "***Today Match %s ,%s Choice -";
+    public static final String noMatchString = "***No Match %s today";
+    public static final int maxMatchesPerDay = 2;
+    public static LinkedHashMap<String, User> participants = new LinkedHashMap<>();
 
-    static {
+    /*static {
         for (Participants value : Participants.values()) {
             participants.putIfAbsent(value.toString(), new User());
         }
-    }
-
+    }*/
+    @Inject
+    SheetOperations sheetOperations;
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
@@ -59,73 +62,71 @@ public class ExampleResource {
             }
             return null;
         };
-
-        Optional<String> todayMatch = getTodaysMatch(lines.get(), matchString);
-        if (todayMatch.isEmpty()) {
-            return "Did you forgot to include today's scheduled match?";
-        }
-        System.out.println("Today's match is - " + todayMatch.get());
-        String firstTeam = StringUtils.substringBefore(todayMatch.get().toUpperCase(), "VS").trim();
-        String secondTeam = StringUtils.substringAfter(todayMatch.get().toUpperCase(), "VS").trim();
-        ArrayList teams = new ArrayList();
-        teams.add(firstTeam);
-        teams.add(secondTeam);
-        System.out.println("Today's first team is - " + firstTeam);
-        System.out.println("Today's second team is - " + secondTeam);
-
-        boolean noMatchDay = noMatchDay(lines.get());
-        if (noMatchDay) {
-            System.out.println("No Match today");
-        } else {
-            for (Participants value : Participants.values()) {
-                Optional<String> team = searchForParticipantTeam(lines.get(), value.toString());
-                User user = participants.get(value.toString());
-                if (team.isEmpty()) {
-                    user.setChosenTeam("");
-                    participants.put(value.toString(), user);
-                    System.out.println(value.toString() + " hasn't participated in today's match");
-                } else {
-                    if (teams.contains(team.get())) {
-                        user.setChosenTeam(team.get());
-                        participants.put(value.toString(), user);
-                    } else {
-                        System.out.println(value.toString() + " hasn't chosen proper team in today's match");
-                    }
-
-                }
-
+        for (int m = 1; m <= maxMatchesPerDay; m++) {
+            Optional<String> todayMatch = getTodaysMatch(lines.get(), matchString, m);
+            if (todayMatch.isEmpty()) {
+                continue;
             }
+            System.out.println("Today's match " + m + " is - " + todayMatch.get());
+            String firstTeam = StringUtils.substringBefore(todayMatch.get().toUpperCase(), "VS").trim();
+            String secondTeam = StringUtils.substringAfter(todayMatch.get().toUpperCase(), "VS").trim();
+            ArrayList teams = new ArrayList();
+            teams.add(firstTeam);
+            teams.add(secondTeam);
+            System.out.println("Today's match " + m + " first team is - " + firstTeam);
+            System.out.println("Today's match " + m + " second team is - " + secondTeam);
+
+
+            boolean noMatchDay = noMatchDay(lines.get(), m);
+
+            for (String value : sheetOperations.getParticipants()) {
+                User user = new User();
+
+                if (noMatchDay){
+                    user.setChosenTeam("");
+                    participants.put(value, user);
+                }else{
+                    Optional<String> team = searchForParticipantTeam(lines.get(), value, m);
+                    if (team.isEmpty()) {
+                        user.setChosenTeam("");
+                        participants.put(value, user);
+                        System.out.println(value + " hasn't participated in today's match");
+                    } else {
+                        if (teams.contains(team.get())) {
+                            user.setChosenTeam(team.get());
+                            participants.put(value, user);
+                        } else {
+                            System.out.println(value + " hasn't chosen proper team in today's match");
+                        }
+
+                    }
+                }
+            }
+
             System.out.println(participants.toString());
 
-            Optional<String> todayMatchWinner = getTodaysMatch(lines.get(), matchWinnerString);
-            if (todayMatchWinner.isEmpty()) {
-                return "Did you forgot to publish today's scheduled match result?";
-            } else if (!teams.contains(todayMatchWinner.get())) {
-                return "Match winner is incorrect. It isn't matching with the provided scheduled match - " + todayMatch;
+            Optional<String> todayMatchWinner = getTodaysMatch(lines.get(), matchWinnerString, m);
+            if (noMatchDay) {
+                todayMatchWinner = Optional.of("NMD");
+            } else {
+                if (todayMatchWinner.isEmpty() && !noMatchDay) {
+                    return "Did you forgot to publish today's scheduled match result?";
+                } else if (!teams.contains(todayMatchWinner.get())) {
+                    return "Match winner is incorrect. It isn't matching with the provided scheduled match - " + todayMatch;
+                }
             }
-            System.out.println("Today's match winner is - " + todayMatchWinner.get());
+
+            System.out.println("Today's match " + m + " winner is - " + todayMatchWinner.get());
 
             populateCreditAmounts(todayMatchWinner);
-            writeToSheet(noMatchDay);
+            sheetOperations.writeResultsToSheet(participants, todayMatch.get(), todayMatchWinner.get(), noMatchDay);
         }
-       /* String data = lines.get().collect(Collectors.joining("\n"));
-
-        System.out.println(data);*/
         return "Done";
     }
 
-    private void writeToSheet(boolean noMatchDay) throws IOException, GeneralSecurityException {
-
-        if(noMatchDay){
-            System.out.println("no match day in para sheets");
-        }else{
-            SheetQuickStart.mainSheet(participants);
-        }
-
-    }
-
-    private boolean noMatchDay(Stream<String> stringStream) {
-        return stringStream.anyMatch(e -> StringUtils.containsIgnoreCase(e, noMatchString));
+    private boolean noMatchDay(Stream<String> stringStream, int matchNumer) {
+        return stringStream.anyMatch(e -> StringUtils.containsIgnoreCase(e,
+                String.format(noMatchString, matchNumer)));
     }
 
     private void populateCreditAmounts(Optional<String> todayMatchWinner) {
@@ -133,7 +134,7 @@ public class ExampleResource {
                 .mapToDouble(User::getBetAmount);
 
         double losersAmount = intStream.get().sum();
-        long countOfWinners = Participants.values().length - intStream.get().count();
+        long countOfWinners = participants.size() - intStream.get().count();
         double distributionAmount = (losersAmount / countOfWinners);
 
         participants.entrySet().parallelStream().filter(e -> (e.getValue().getChosenTeam().equalsIgnoreCase(todayMatchWinner.get())))
@@ -144,9 +145,10 @@ public class ExampleResource {
         System.out.println(participants.toString());
     }
 
-    private Optional<String> searchForParticipantTeam(Stream<String> lines, String toString) {
+    private Optional<String> searchForParticipantTeam(Stream<String> lines, String toString, int matchNumber) {
 
-        Optional<String> todayTeamO = lines.filter(e -> StringUtils.containsIgnoreCase(e, String.format(participantString, toString))).findFirst();
+        Optional<String> todayTeamO = lines.filter(e -> StringUtils.containsIgnoreCase(e,
+                String.format(participantString, matchNumber, toString))).findFirst();
         Optional<String> todayTeam = Optional.empty();
         if (todayTeamO.isPresent()) {
             todayTeam = Optional.of(todayTeamO.get().substring(todayTeamO.get().
@@ -155,8 +157,8 @@ public class ExampleResource {
         return todayTeam;
     }
 
-    private static Optional<String> getTodaysMatch(Stream<String> lines, String keyString) {
-        Optional<String> matchToday = lines.filter(e -> StringUtils.containsIgnoreCase(e, keyString)).findFirst();
+    private static Optional<String> getTodaysMatch(Stream<String> lines, String keyString, int matchNumber) {
+        Optional<String> matchToday = lines.filter(e -> StringUtils.containsIgnoreCase(e, String.format(keyString, matchNumber))).findFirst();
         Optional<String> todayMatch = Optional.empty();
         if (matchToday.isPresent()) {
             todayMatch = Optional.of(matchToday.get().substring(matchToday.get().
