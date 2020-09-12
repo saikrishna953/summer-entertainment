@@ -4,10 +4,7 @@ import org.acme.Sheets.SheetOperations;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -15,20 +12,21 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
-@Path("/hello")
+@Path("/summerEntertainment")
 public class ExampleResource {
 
 
-    public static final String matchString = "***Match %s -";
-    public static final String matchWinnerString = "***Match %s Winner -";
-    public static final String participantString = "***Today Match %s ,%s Choice -";
-    public static final String noMatchString = "***No Match %s today";
+    public static final String matchString = "###Match %s -";
+    public static final String matchWinnerString = "###Match %s Winner -";
+    public static final String participantString = "###Today Match %s ,%s Choice -";
+    public static final String noMatchString = "###No Match %s today";
     public static final int maxMatchesPerDay = 2;
     public static LinkedHashMap<String, User> participants = new LinkedHashMap<>();
 
@@ -48,19 +46,21 @@ public class ExampleResource {
 
     @POST
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("/update")
-    public String updateSheet() throws IOException, URISyntaxException, GeneralSecurityException {
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/sheets/update")
+    public String updateSheet(Root requestBody) throws IOException, URISyntaxException, GeneralSecurityException {
 
-        java.nio.file.Path path = Paths.get(getClass().getClassLoader()
-                .getResource("chat.txt").toURI());
+        /*java.nio.file.Path path = Paths.get(getClass().getClassLoader()
+                .getResource("chat.txt").toURI());*/
 
         Supplier<Stream<String>> lines = () -> {
-            try {
+            return Arrays.stream(requestBody.getBody().split("\\r?\\n"));
+            /*try {
                 return Files.lines(path);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return null;
+            return null;*/
         };
         for (int m = 1; m <= maxMatchesPerDay; m++) {
             Optional<String> todayMatch = getTodaysMatch(lines.get(), matchString, m);
@@ -112,7 +112,7 @@ public class ExampleResource {
                 if (todayMatchWinner.isEmpty() && !noMatchDay) {
                     return "Did you forgot to publish today's scheduled match result?";
                 } else if (!teams.contains(todayMatchWinner.get())) {
-                    return "Match winner is incorrect. It isn't matching with the provided scheduled match - " + todayMatch;
+                    return "Match winner is incorrect. It isn't matching with the provided scheduled match - " + todayMatch.get();
                 }
             }
 
@@ -152,7 +152,7 @@ public class ExampleResource {
         Optional<String> todayTeam = Optional.empty();
         if (todayTeamO.isPresent()) {
             todayTeam = Optional.of(todayTeamO.get().substring(todayTeamO.get().
-                    lastIndexOf('-') + 1).replace('*', ' ').trim());
+                    lastIndexOf('-') + 1).replace('#', ' ').trim());
         }
         return todayTeam;
     }
@@ -162,7 +162,7 @@ public class ExampleResource {
         Optional<String> todayMatch = Optional.empty();
         if (matchToday.isPresent()) {
             todayMatch = Optional.of(matchToday.get().substring(matchToday.get().
-                    lastIndexOf('-') + 1).replace('*', ' ').trim());
+                    lastIndexOf('-') + 1).replace('#', ' ').trim());
         }
         return todayMatch;
     }
