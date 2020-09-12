@@ -80,18 +80,6 @@
             <artifactId>google-api-services-sheets</artifactId>
             <version>v4-rev581-1.25.0</version>
         </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-amazon-lambda-http</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest-client-jackson</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest-client</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>

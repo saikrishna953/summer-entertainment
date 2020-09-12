@@ -3,6 +3,7 @@ package org.acme;
 import org.acme.Sheets.SheetOperations;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -19,7 +20,7 @@ import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
-@Path("/summerEntertainment")
+@ApplicationScoped
 public class ExampleResource {
 
 
@@ -38,16 +39,6 @@ public class ExampleResource {
     @Inject
     SheetOperations sheetOperations;
 
-    @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    public String hello() {
-        return "hello";
-    }
-
-    @POST
-    @Produces(MediaType.TEXT_PLAIN)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/sheets/update")
     public String updateSheet(Root requestBody) throws IOException, URISyntaxException, GeneralSecurityException {
 
         /*java.nio.file.Path path = Paths.get(getClass().getClassLoader()

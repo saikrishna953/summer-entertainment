@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS Serverless Quarkus HTTP - com.amazon::LambdaQuarkus
+Resources:
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: Api Gateway for Quarkus demo
+      StageName: prod
+  LambdaQuarkusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      Runtime: java11
+      CodeUri: s3://summer-entertainment1/1d13fa8423faa909242ddd51d4725a17
+      MemorySize: 256
+      Timeout: 30
+      Events:
+        LambdaQuarkusUpdateSheet:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ApiGatewayApi
+            Path: /summerEntertainment/sheets/update
+            Method: POST
+Outputs:
+  ApiUrl:
+    Description: URL of the users listing in the prod stage
+    Value:
+      Fn::Sub: https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/prod
