@@ -24,6 +24,11 @@ Resources:
             RestApiId: !Ref ApiGatewayApi
             Path: /summerEntertainment/sheets/update
             Method: POST
+        GetResource:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: any
 
 Outputs:
   ApiUrl:
