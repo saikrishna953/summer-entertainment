@@ -8,15 +8,12 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @Path("/summerEntertainment")
@@ -26,6 +23,7 @@ public class ExampleResource {
     public static final String matchString = "###Match %s -";
     public static final String matchWinnerString = "###Match %s Winner -";
     public static final String participantString = "###Today Match %s ,%s Choice -";
+    public static final String bAmountString = "###Today Match %s amount -";
     public static final String noMatchString = "###No Match %s today";
     public static final int maxMatchesPerDay = 2;
     public static LinkedHashMap<String, User> participants = new LinkedHashMap<>();
@@ -62,6 +60,14 @@ public class ExampleResource {
             }
             return null;*/
         };
+
+        List<List<Object>> wholeSheet = sheetOperations.getAllValues();
+        if (wholeSheet == null) {
+            return "Your sheet is empty, update it!";
+        }
+
+        ArrayList<String> participantsList = getParticipantsList(wholeSheet);
+
         for (int m = 1; m <= maxMatchesPerDay; m++) {
             Optional<String> todayMatch = getTodaysMatch(lines.get(), matchString, m);
             if (todayMatch.isEmpty()) {
@@ -75,18 +81,24 @@ public class ExampleResource {
             teams.add(secondTeam);
             System.out.println("Today's match " + m + " first team is - " + firstTeam);
             System.out.println("Today's match " + m + " second team is - " + secondTeam);
-
+            if (checkIfTheListUpdated(wholeSheet,todayMatch.get())){
+                return "Sheet is already updated for the given chat. Contact admin to rewrite it";
+            }
 
             boolean noMatchDay = noMatchDay(lines.get(), m);
 
-            for (String value : sheetOperations.getParticipants()) {
+            for (String value : participantsList) {
                 User user = new User();
 
-                if (noMatchDay){
+                if (noMatchDay) {
                     user.setChosenTeam("");
                     participants.put(value, user);
-                }else{
+                } else {
                     Optional<String> team = searchForParticipantTeam(lines.get(), value, m);
+                    Double bAmount = getTodaysBAmount(lines.get(),m);
+                    if(bAmount != null){
+                        user.setBetAmount(bAmount);
+                    }
                     if (team.isEmpty()) {
                         user.setChosenTeam("");
                         participants.put(value, user);
@@ -110,7 +122,7 @@ public class ExampleResource {
                 todayMatchWinner = Optional.of("NMD");
             } else {
                 if (todayMatchWinner.isEmpty() && !noMatchDay) {
-                    return "Did you forgot to publish today's scheduled match result?";
+                    return "Did you forgot to publish today's scheduled match result? " + todayMatch.get();
                 } else if (!teams.contains(todayMatchWinner.get())) {
                     return "Match winner is incorrect. It isn't matching with the provided scheduled match - " + todayMatch.get();
                 }
@@ -122,6 +134,62 @@ public class ExampleResource {
             sheetOperations.writeResultsToSheet(participants, todayMatch.get(), todayMatchWinner.get(), noMatchDay);
         }
         return "Done";
+    }
+
+    private Double getTodaysBAmount(Stream<String> lines, int m) {
+        Optional<String> bAmount = lines.filter(e -> StringUtils.containsIgnoreCase(e, String.format(bAmountString, m))).findFirst();
+        if (bAmount.isPresent()) {
+            return Double.parseDouble(Optional.of(bAmount.get().substring(bAmount.get().
+                    lastIndexOf('-') + 1).replace('#', ' ').trim()).get());
+        }
+        return null;
+
+    }
+
+    private ArrayList<String> getParticipantsList(List<List<Object>> wholeSheet) {
+
+        ArrayList<String> participantsList = new ArrayList<>();
+
+        for (int i = 4; i < wholeSheet.get(0).size(); i++) {
+            participantsList.add(wholeSheet.get(0).get(i).toString());
+        }
+        return participantsList;
+
+    }
+
+/*    private ArrayList<Double> getTotals(List<List<Object>> wholeSheet, int participantsSize) {
+
+        ArrayList<Double> totals = new ArrayList<>();
+        if (wholeSheet.get(1) != null) {
+            for (int i = 4; i < wholeSheet.get(1).size(); i++) {
+                totals.add((Double.parseDouble((String) wholeSheet.get(1).get(i))));
+            }
+        }
+        if(totals.isEmpty() ){
+            IntStream.range(0, participantsSize).forEach(e -> totals.add(Double.valueOf("0")));
+        }
+        return totals;
+
+    }*/
+
+    private boolean checkIfTheListUpdated(List<List<Object>> wholeSheet, String todayMatch) {
+
+        boolean date = false;
+        boolean match = false;
+        for (List<Object> row : wholeSheet
+        ) {
+            for (Object value : row
+            ) {
+                if (StringUtils.equalsIgnoreCase(value.toString(), LocalDate.now().toString())) {
+                    date = true;
+                }
+                if (StringUtils.equalsIgnoreCase(value.toString(), todayMatch)) {
+                    match = true;
+                }
+            }
+        }
+        return date && match;
+
     }
 
     private boolean noMatchDay(Stream<String> stringStream, int matchNumer) {
