@@ -52,6 +52,8 @@ public class ExampleResource {
             return null;*/
         };
 
+        System.out.println(lines.toString());
+
         List<List<Object>> wholeSheet = sheetOperations.getAllValues();
         if (wholeSheet == null) {
             return "Your sheet is empty, update it!";

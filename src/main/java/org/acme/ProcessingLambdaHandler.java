@@ -32,6 +32,7 @@ public class ProcessingLambdaHandler implements RequestHandler<APIGatewayProxyRe
                 String body = request.getBody();
                 try {
                     Root requestBody = mapper.readValue(body, Root.class);
+                    System.out.println(requestBody.toString());
                     result = exampleResource.updateSheet(requestBody);
 
                 } catch (Exception exc) {
