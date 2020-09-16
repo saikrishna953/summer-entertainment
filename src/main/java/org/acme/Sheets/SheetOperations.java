@@ -27,7 +27,7 @@ public class SheetOperations {
         this.service = SheetInstance.getSheetInstance();
     }
 
-    public ArrayList<String> getParticipants() throws IOException {
+/*    public ArrayList<String> getParticipants() throws IOException {
         ArrayList<String> sheetParticipants = new ArrayList<>();
         final String range = "Sheet1!E1:1";
         ValueRange response = service.spreadsheets().values()
@@ -45,7 +45,7 @@ public class SheetOperations {
         }
         return sheetParticipants;
 
-    }
+    }*/
 
     public ArrayList<Double> getTotals(LinkedHashMap<String, User> participants) throws IOException {
 
@@ -66,6 +66,16 @@ public class SheetOperations {
             }
         }
         return totals;
+
+    }
+
+    public List<List<Object>> getAllValues() throws IOException {
+
+        ValueRange response = service.spreadsheets().values()
+                .get(Constants.SPREADSHEET_ID, "Sheet1")
+                //.setMajorDimension("COLUMNS")
+                .execute();
+        return response.getValues();
 
     }
 
@@ -98,16 +108,15 @@ public class SheetOperations {
         cellValues.add(Arrays.asList(participants.values().iterator().next().getBetAmount()));
         if (noMatchDay) {
             participants.entrySet().forEach(e -> {
-                User currentUser = e.getValue();
                 cellValues.add(Arrays.asList("NMD"));
             });
         } else {
-            ArrayList<Double> totals = getTotals(participants);
             participants.entrySet().forEach(e -> {
                 User currentUser = e.getValue();
                 cellValues.add(Arrays.asList(new StringBuilder(currentUser.getChosenTeam()).append(",")
                         .append(Double.toString(currentUser.getCreditAmount())).toString()));
             });
+            ArrayList<Double> totals = getTotals(participants);
             updateTotals(participants, totals);
         }
 

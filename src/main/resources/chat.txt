@@ -20,7 +20,7 @@
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Today Match 1 ,Srikanth Choice - RCB###
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Today Match 1 ,Anil Choice - CSK###
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Match 1 - CSK vs RCB###
-9/1/20, 10:51 AM - Saikrishna Sharma: ###No Match 1 today###
+9/1/20, 10:51 AM - Saikrishna Sharma: ###Match 1 - RCB###
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Today Match 2 ,Sai Choice - KKR###
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Today Match 2 ,Rajsekhar Choice - MI###
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Today Match 2 ,Vamsee Choice - MI###
@@ -31,6 +31,7 @@
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Today Match 2 ,Srikanth Choice - MI###
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Today Match 2 ,Anil Choice - MI###
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Match 2 - KKR vs MI###
+9/1/20, 10:51 AM - Saikrishna Sharma: ###Today Match 2 amount - 58###
 9/1/20, 10:51 AM - Saikrishna Sharma: ###Match 2 Winner - KKR###
 9/1/20, 11:29 AM - Achanta Rajsekhar: 😄
 9/1/20, 12:15 PM - Vamsee Thati: <Media omitted>

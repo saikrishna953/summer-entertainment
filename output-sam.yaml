@@ -12,7 +12,7 @@ Resources:
     Properties:
       Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
       Runtime: java11
-      CodeUri: s3://summer-entertainment/792e6cfc60379b8fe7cdd8c9459a65d9
+      CodeUri: s3://summer-entertainment/0ea554c80be4170c40e902380e434520
       MemorySize: 256
       Timeout: 30
       Events:
