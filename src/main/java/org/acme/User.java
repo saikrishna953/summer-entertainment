@@ -11,6 +11,6 @@ public class User {
 
     private String chosenTeam;
     private double betAmount = 50;
-    private double creditAmount;
+    private double creditAmount=0;
 
 }

@@ -198,16 +198,16 @@ public class ExampleResource {
     }
 
     private void populateCreditAmounts(Optional<String> todayMatchWinner) {
-        Supplier<DoubleStream> intStream = () -> participants.values().stream().filter(user -> (!user.getChosenTeam().equalsIgnoreCase(todayMatchWinner.get())))
+        /*Supplier<DoubleStream> intStream = () -> participants.values().stream().filter(user -> (user.getChosenTeam().equalsIgnoreCase(todayMatchWinner.get())))
                 .mapToDouble(User::getBetAmount);
 
         double losersAmount = intStream.get().sum();
         long countOfWinners = participants.size() - intStream.get().count();
-        double distributionAmount = (losersAmount / countOfWinners);
+        double distributionAmount = (losersAmount / countOfWinners);*/
 
-        participants.entrySet().parallelStream().filter(e -> (e.getValue().getChosenTeam().equalsIgnoreCase(todayMatchWinner.get())))
+        participants.entrySet().parallelStream().filter(e -> (! e.getValue().getChosenTeam().equalsIgnoreCase(todayMatchWinner.get())))
                 .forEach(e -> {
-                    e.getValue().setCreditAmount(distributionAmount);
+                    e.getValue().setCreditAmount(e.getValue().getBetAmount());
                 });
 
         System.out.println(participants.toString());

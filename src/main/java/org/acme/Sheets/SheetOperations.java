@@ -102,7 +102,7 @@ public class SheetOperations {
                                     String matchWinner, boolean noMatchDay) throws IOException {
 
         List<List<Object>> cellValues = new ArrayList<>();
-        cellValues.add(Arrays.asList(LocalDate.now().toString()));
+        cellValues.add(Arrays.asList(LocalDate.now().minusDays(1L).toString()));
         cellValues.add(Arrays.asList(todayMatch));
         cellValues.add(Arrays.asList(matchWinner));
         cellValues.add(Arrays.asList(participants.values().iterator().next().getBetAmount()));
